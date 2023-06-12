@@ -1,25 +1,26 @@
-// Write your code here
 import './index.css'
 
 const LanguageFilterItem = props => {
-  const {item, selectedLanguage, isSelected} = props
-  const {id, language} = item
-
-  const btnClassName = isSelected ? 'btn selected-language-btn' : 'btn'
-
+  const {
+    isSelected,
+    languageFilter,
+    setSelectedLanguageFilterAndGetRepositories,
+  } = props
+  const btnClassName = isSelected
+    ? 'language-btn selected-language-btn'
+    : 'language-btn'
   const onClickBtnLanguageFilter = () => {
-    console.log(id)
-    selectedLanguage(id)
+    setSelectedLanguageFilterAndGetRepositories(languageFilter.id)
   }
 
   return (
-    <li className="li">
+    <li>
       <button
-        type="button"
         className={btnClassName}
         onClick={onClickBtnLanguageFilter}
+        type="button"
       >
-        {language}
+        {languageFilter.language}
       </button>
     </li>
   )

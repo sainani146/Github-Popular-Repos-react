@@ -1,8 +1,8 @@
 import {Component} from 'react'
 import Loader from 'react-loader-spinner'
+
 import LanguageFilterItem from '../LanguageFilterItem'
 import RepositoryItem from '../RepositoryItem'
-
 import './index.css'
 
 const languageFiltersData = [
@@ -13,66 +13,51 @@ const languageFiltersData = [
   {id: 'CSS', language: 'CSS'},
 ]
 
-// Write your code here
-export default class GithubPopularRepos extends Component {
+const apiUrl = 'https://apis.ccbp.in/popular-repos?language='
+
+class GithubPopularRepos extends Component {
   state = {
     isLoading: true,
-    activeLanguage: languageFiltersData[0].id,
-    repositoryList: [],
-    connection: false,
+    repositoriesData: [],
+    selectedLanguageFilter: 'ALL',
   }
 
   componentDidMount() {
-    this.getItems()
+    this.getRepositories(languageFiltersData[0].id)
   }
 
-  getItems = async () => {
-    try {
-      const {activeLanguage} = this.state
-      const options = {
-        method: 'GET',
-      }
-      const response = await fetch(
-        `https://apis.ccbp.in/popular-repos?language=${activeLanguage}`,
-        options,
-      )
-      const fetchedData = await response.json()
-
-      const updatedData = await fetchedData.popular_repos.map(
-        eachRepository => ({
-          id: eachRepository.id,
-          imageUrl: eachRepository.avatar_url,
-          name: eachRepository.name,
-          starsCount: eachRepository.stars_count,
-          forksCount: eachRepository.forks_count,
-          issuesCount: eachRepository.issues_count,
-        }),
-      )
-
-      console.log(updatedData)
-      this.setState({repositoryList: updatedData, isLoading: false})
-    } catch (error) {
-      console.log(error)
-      this.setState({isLoading: false, connection: true})
-    }
+  setRepositories = (fetchedData, loadingStatus) => {
+    this.setState({
+      repositoriesData: fetchedData,
+      isLoading: loadingStatus,
+    })
   }
 
-  renderFailed = () => (
-    <div className="failure-section">
-      <img
-        className="failure-img"
-        src="https://assets.ccbp.in/frontend/react-js/api-failure-view.png"
-        alt="failure view"
-      />
-    </div>
-  )
+  setIsLoading = loadingStatus => {
+    this.setState({isLoading: loadingStatus})
+  }
+
+  getRepositories = async selectedLanguageFilter => {
+    this.setIsLoading(true)
+    const response = await fetch(`${apiUrl}${selectedLanguageFilter}`)
+    const fetchedData = await response.json()
+    const updatedData = fetchedData.popular_repos.map(eachRepository => ({
+      id: eachRepository.id,
+      imageUrl: eachRepository.avatar_url,
+      name: eachRepository.name,
+      starsCount: eachRepository.stars_count,
+      forksCount: eachRepository.forks_count,
+      issuesCount: eachRepository.issues_count,
+    }))
+    this.setRepositories(updatedData, false)
+  }
 
   renderRepositoriesList = () => {
-    const {repositoryList} = this.state
+    const {repositoriesData} = this.state
 
     return (
       <ul className="repositories-cards-list-container">
-        {repositoryList.map(repositoryData => (
+        {repositoriesData.map(repositoryData => (
           <RepositoryItem
             key={repositoryData.id}
             repositoryData={repositoryData}
@@ -82,35 +67,49 @@ export default class GithubPopularRepos extends Component {
     )
   }
 
-  selectedLanguage = lang => {
-    this.setState({activeLanguage: lang, isLoading: true}, this.getItems)
-  }
-
   renderLoader = () => (
     <div data-testid="loader">
       <Loader type="ThreeDots" color="#0284c7" height={80} width={80} />
     </div>
   )
 
-  render() {
-    const {isLoading, activeLanguage, connection} = this.state
+  setSelectedLanguageFilterAndGetRepositories = newFilterId => {
+    this.setState({selectedLanguageFilter: newFilterId})
+    this.getRepositories(newFilterId)
+  }
+
+  renderLanguageFiltersList = () => {
+    const {selectedLanguageFilter} = this.state
 
     return (
-      <div className="main-container">
-        <h1 className="main-title">Popular</h1>
-        <ul className="ul">
-          {languageFiltersData.map(each => (
-            <LanguageFilterItem
-              isSelected={each.id === activeLanguage}
-              key={each.id}
-              item={each}
-              selectedLanguage={this.selectedLanguage}
-            />
-          ))}
-        </ul>
-        {isLoading ? this.renderLoader() : this.renderRepositoriesList()}
-        {connection && this.renderFailed()}
+      <ul className="filters-list-container">
+        {languageFiltersData.map(eachLanguageFilter => (
+          <LanguageFilterItem
+            isSelected={eachLanguageFilter.id === selectedLanguageFilter}
+            key={eachLanguageFilter.id}
+            languageFilter={eachLanguageFilter}
+            setSelectedLanguageFilterAndGetRepositories={
+              this.setSelectedLanguageFilterAndGetRepositories
+            }
+          />
+        ))}
+      </ul>
+    )
+  }
+
+  render() {
+    const {isLoading} = this.state
+
+    return (
+      <div className="app-container">
+        <div className="github-popular-repositories-container">
+          <h1 className="heading">Popular</h1>
+          {this.renderLanguageFiltersList()}
+          {isLoading ? this.renderLoader() : this.renderRepositoriesList()}
+        </div>
       </div>
     )
   }
 }
+
+export default GithubPopularRepos
